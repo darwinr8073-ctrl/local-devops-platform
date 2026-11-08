@@ -1,63 +1,26 @@
-
+cd /home/vedhiks/projects/local-devops-platform
+cat > Jenkinsfile <<'EOF'
 pipeline {
-    agent any
-
-    environment {
-        APP_IMAGE = 'local-devops-app:1.0'
+  agent any
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
     }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                echo 'Starting Local DevOps Platform pipeline'
-                checkout scm
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t ${APP_IMAGE} ./app'
-            }
-        }
-
-        stage('Terraform Init') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform init'
-                }
-            }
-        }
-
-        stage('Terraform Validate') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform validate'
-                }
-            }
-        }
-
-        stage('Terraform Deploy') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform apply -auto-approve'
-                }
-            }
-        }
-
-        stage('Application Health Check') {
-            steps {
-                sh 'curl --fail http://localhost:5000/health'
-            }
-        }
+    stage('Build Image') {
+      steps { sh 'docker build -t local-devops-app:latest .' }
     }
-
-    post {
-        success {
-            echo 'SUCCESS: Application deployed successfully!'
-        }
-
-        failure {
-            echo 'FAILED: Please check the Jenkins console output.'
-        }
+    stage('Deploy') {
+      steps {
+        sh '''
+          docker rm -f local-devops-app || true
+          docker run -d --name local-devops-app -p 5000:5000 local-devops-app:latest
+        '''
+      }
     }
+    stage('Verify') {
+      steps { sh 'sleep 3 && curl -f http://localhost:5000' }
+    }
+  }
 }
+EOF
+ls Jenkinsfile Dockerfile
