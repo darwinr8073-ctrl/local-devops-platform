@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 import socket
 import datetime
 
@@ -6,12 +6,11 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return jsonify({
-        "project": "Local DevOps Platform",
-        "message": "Successfully deployed!",
-        "hostname": socket.gethostname(),
-        "time": datetime.datetime.now().isoformat()
-    })
+    return render_template(
+        "index.html",
+        hostname=socket.gethostname(),
+        time=datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    )
 
 @app.route("/health")
 def health():
